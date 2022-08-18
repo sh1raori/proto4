@@ -1,0 +1,173 @@
+syntax = "proto3";
+//package mediaproto;
+
+enum PixFmt {  //in proto3 enum begin s 0
+    //NONE = -1;
+    YUV420P = 0;
+    UYVY422 = 1;
+    YUVJ420P = 2;
+    NV12 = 3;
+};
+
+message VideoMediaType {
+    uint32 width = 4;
+    uint32 height = 5;
+    uint32 fps_num = 6;
+    uint32 fps_den = 7;
+    uint32 aspect_num = 8;
+    uint32 aspect_den = 9;
+    PixFmt pix_fmt = 10; //[ default = YUV420P ]
+};
+
+message SubtitleMediaType {
+    uint32 aspect_num = 1;
+    uint32 aspect_den = 2;
+    message Pair {
+        string key = 1;
+        string value = 2;
+    }
+    repeated Pair metadata = 3;
+    bytes header = 4;
+    uint32 width = 5;
+    uint32 height = 6;
+};
+
+message DataMediaType {
+    message Pair {
+        string key = 1;
+        string value = 2;
+    }
+    repeated Pair info = 1;
+};
+
+message AudioMediaType {
+    uint32 freq = 4;
+    uint32 nchan = 5;
+    uint32 ssize = 6; //[ default = 2 ]
+    enum SampleFmt {
+        //NONE = -1;
+        S16 = 0;         ///< signed 16 bits
+        U8 = 1;          ///< unsigned 8 bits
+        S32 = 2;         ///< signed 32 bits
+        FLT = 3;         ///< float
+        DBL = 4;         ///< double
+        U8P = 5;         ///< unsigned 8 bits, planar
+        S16P = 6;        ///< signed 16 bits, planar
+        S32P = 7;        ///< signed 32 bits, planar
+        FLTP = 8;        ///< float, planar
+        DBLP = 9;        ///< double, planar
+    };
+    SampleFmt sample_fmt = 7; //[ default = S16 ]
+    string layout = 8;
+};
+
+message Stream {
+    enum Type {
+        VIDEO = 0;
+        AUDIO = 1;
+        SUBTITLE = 2;
+        DATA = 3;
+    };
+    uint32 id = 1;
+    Type type = 2;
+    string codec = 3;
+    uint32 bitrate = 4;
+    uint32 tb_num = 5;
+    uint32 tb_den = 6;
+    bytes extradata = 7;
+    VideoMediaType videomt = 8;
+    AudioMediaType audiomt = 9;
+    string name = 10;
+    string channel = 11;
+    SubtitleMediaType subtitlemt = 12;
+    DataMediaType datamt = 13;
+    message Pair {
+        string key = 1;
+        string value = 2;
+    }
+    repeated Pair metadata = 14;
+    CodecParameters avparams = 15;
+};
+
+message CodecParameters {
+    uint32 codec_type = 1;
+    uint32 codec_id = 2;
+    uint32 codec_tag = 3;
+    bytes extradata = 4;
+    uint32 format = 5;
+    uint64 bit_rate = 6;
+    uint32 bits_per_coded_sample = 7;
+    uint32 bits_per_raw_sample = 8;
+    uint32 profile = 9;
+    uint32 level = 10;
+    uint32 width = 11;
+    uint32 height = 12;
+    int32 sample_aspect_ratio_num = 13;
+    int32 sample_aspect_ratio_den = 14;
+    uint32 field_order = 15;
+    uint32 color_range = 16;
+    uint32 color_primaries = 17;
+    uint32 color_trc = 18;
+    uint32 color_space = 19;
+    uint32 chroma_location = 20;
+    uint32 video_delay = 21;
+    uint64 channel_layout = 22;
+    uint32 channels = 23;
+    uint32 sample_rate = 24;
+    uint32 block_align = 25;
+    uint32 frame_size = 26;
+    uint32 initial_padding = 27;
+    uint32 trailing_padding = 28;
+    uint32 seek_preroll = 29;
+};
+
+enum FrameType {
+    I = 0;
+    P = 1;
+    B = 2;
+};
+
+message MediaPacket {
+    uint32 stream_id = 1;
+    uint64 dts = 2;
+    uint32 pts_offset = 3;  //[ default = 0 ]
+    FrameType frametype = 4; //[ default = I ]
+    bytes data = 5;
+    uint32 duration = 6; //[ default = 0 ]
+};
+
+
+message Start {
+    uint64 start_ts = 1;
+    uint32 tb_num = 2;
+    uint32 tb_den = 3;
+    string channel = 4;
+};
+
+message Stop {};
+
+
+message GopSlice {
+    int64 ts_num = 1;
+    int64 ts_den = 2;
+    int64 duration_num = 3;
+    int64 duration_den = 4;
+    repeated MediaPacket packets = 5;
+};
+
+message Msg {
+    enum Type {
+        Nop = 0;
+        Start = 1;
+        Stop = 2;
+        Stream = 3;
+        MediaPacket = 4;
+        GopSlice = 5;
+    };
+    Type type = 1;
+    Stop stop = 2;
+    Start start = 3;
+    Stream stream = 4;
+    MediaPacket mediapacket = 5;
+    GopSlice gopslice = 6;
+};
